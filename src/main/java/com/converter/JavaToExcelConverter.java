@@ -185,7 +185,6 @@ logger.info("Processing completed: " + success.get() + " files succeeded, " + er
             workbook.write(fos);
         }
     }
-}
 private static final class Counter {
         int value;
 
@@ -196,4 +195,5 @@ private static final class Counter {
         int get() {
             return value;
         }
+}
 }
