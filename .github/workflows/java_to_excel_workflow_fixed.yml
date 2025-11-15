@@ -1,6 +1,8 @@
 name: Java to Excel Conversion
 
 on:
+  push:
+    
   workflow_dispatch:
     inputs:
       input_folder:
@@ -15,6 +17,12 @@ on:
         description: 'Mindustry branch (optional)'
         required: false
         default: 'master'
+
+env:
+  # 给 push 事件用的缺省值
+  INPUT_FOLDER:  ${{ github.event.inputs.input_folder  || 'Mindustry/core/src/mindustry/' }}
+  OUTPUT_FOLDER: ${{ github.event.inputs.output_folder || 'output/' }}
+  BRANCH:        ${{ github.event.inputs.branch        || 'master' }}
 
 jobs:
   convert:
