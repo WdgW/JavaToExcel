@@ -12,6 +12,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
+import java.util.stream.Collectors;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -103,7 +104,7 @@ public class JavaToExcelConverter implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        setupLogger();
+        //setupLogger();
         Path inRoot = Paths.get(inputFolder);
         Path outRoot = Paths.get(outputRoot);
 
@@ -225,12 +226,6 @@ public class JavaToExcelConverter implements Callable<Integer> {
 
         for (int i = 0; i < headers.length; i++) {
             sheet.autoSizeColumn(i);
-        }
-    }
-
-    private void saveWorkbook(Workbook workbook) throws IOException {
-        try (FileOutputStream fos = new FileOutputStream(outputFile)) {
-            workbook.write(fos);
         }
     }
 
