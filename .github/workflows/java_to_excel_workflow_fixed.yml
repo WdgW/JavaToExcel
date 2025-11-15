@@ -33,7 +33,7 @@ jobs:
           pip install javalang pandas openpyxl
 
       - name: Run conversion script
-        run: python java_to_excel_modified.py --input_folder "${{ github.event.inputs.java_folder }}" --output_file java_fields_combined.xlsx
+        run: python java_to_excel_skip_syntax.py --input_folder "${{ github.event.inputs.java_folder }}" --output_file java_fields_combined.xlsx
 
       - name: Upload error logs (if any)
         if: always()
