@@ -63,7 +63,7 @@ jobs:
       - name: Zip entire output tree
         if: success()
         run: |
-          zip -r java-fields-output.zip ${{ github.event.inputs.output_folder }}
+          zip -r java-fields-output.zip "$OUTPUT_FOLDER"
 
       - name: Upload output tree
         if: success()
