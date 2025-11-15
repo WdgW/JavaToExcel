@@ -32,7 +32,7 @@ jobs:
         run: mvn clean package
 
       - name: Run Java converter
-        run: java -jar target/java-to-excel-1.0-SNAPSHOT-jar-with-dependencies.jar 
+        run: java -jar  target/java-to-excel-1.0-SNAPSHOT.jar 
             --input-folder "${{ github.event.inputs.java_folder }}" 
             --output-file java_fields_combined.xlsx
 
