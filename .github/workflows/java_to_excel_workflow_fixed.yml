@@ -39,7 +39,7 @@ jobs:
         run: zip -r java_fields_output.zip java_fields_combined.xlsx
 
       - name: Upload zip archive
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: java-fields-archive
           path: java_fields_output.zip
