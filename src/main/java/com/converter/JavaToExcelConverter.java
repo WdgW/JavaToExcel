@@ -1,6 +1,7 @@
 package com.converter;
 
 import java.io.OutputStream;
+import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
@@ -158,7 +159,9 @@ public class JavaToExcelConverter implements Callable<Integer> {
 
     private List<FieldInfo> parseJavaFile(File file) throws IOException {
         List<FieldInfo> fields = new ArrayList<>();
-        JavaParser parser = new JavaParser();
+        ParserConfiguration config = new ParserConfiguration()
+         .setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_21);
+        JavaParser parser = new JavaParser(config);
 
         try (FileInputStream fis = new FileInputStream(file)) {
             ParseResult<CompilationUnit> result = parser.parse(fis);
