@@ -1,0 +1,38 @@
+name: Java to Excel Conversion
+
+on:
+  workflow_dispatch:
+    inputs:
+      java_folder:
+        description: 'Path to folder containing Java files'
+        required: true
+        default: 'src/main/java'
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install javalang pandas openpyxl
+
+      - name: Run conversion script
+        run: python java_to_excel_modified.py --input_folder "${{ github.event.inputs.java_folder }}" --output_file java_fields_combined.xlsx
+
+      - name: Create zip archive
+        run: zip -r java_fields_output.zip java_fields_combined.xlsx
+
+      - name: Upload zip archive
+        uses: actions/upload-artifact@v3
+        with:
+          name: java-fields-archive
+          path: java_fields_output.zip
