@@ -75,26 +75,27 @@ public class JavaToExcelConverter implements Callable<Integer> {
     @Override
     public Integer call() {
         try (Workbook workbook = new XSSFWorkbook()) {
-            int successCount = 0;
-            int errorCount = 0;
+            Counter success = new Counter();
+Counter errors  = new Counter();
 
-            Files.walk(Paths.get(inputFolder))
-                    .filter(Files::isRegularFile)
-                    .filter(path -> path.toString().endsWith(".java"))
-                    .forEach(path -> {
-                        try {
-                            List<FieldInfo> fields = parseJavaFile(path.toFile());
-                            if (!fields.isEmpty()) {
-                                createSheet(workbook, path.getFileName().toString(), fields);
-                                successCount++;
-                            }
-                        } catch (Exception e) {
-                            logger.log(Level.SEVERE, "Error processing file: " + path, e);
-                            errorCount++;
-                        }
-                    });
+Files.walk(Paths.get(inputFolder))
+     .filter(Files::isRegularFile)
+     .filter(p -> p.toString().endsWith(".java"))
+     .forEach(path -> {
+         try {
+             List<FieldInfo> fields = parseJavaFile(path.toFile());
+             if (!fields.isEmpty()) {
+                 createSheet(workbook, path.getFileName().toString(), fields);
+                 success.inc();          // ✅ 合法
+             }
+         } catch (Exception e) {
+             logger.log(Level.SEVERE, "Error processing file: " + path, e);
+             errors.inc();               // ✅ 合法
+         }
+     });
 
-            logger.info("Processing completed: " + successCount + " files succeeded, " + errorCount + " files failed");
+logger.info("Processing completed: " + success.get() + " files succeeded, " + errors.get() + " files failed");
+
             saveWorkbook(workbook);
             System.out.println("Excel file generated: " + outputFile);
             System.out.println("Error log saved to: parsing_errors.log");
