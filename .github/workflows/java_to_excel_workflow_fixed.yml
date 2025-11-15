@@ -3,23 +3,31 @@ name: Java to Excel Conversion
 on:
   workflow_dispatch:
     inputs:
-      java_folder:
-        description: 'Path to folder containing Java files'
+      input_folder:
+        description: 'Path to folder containing Java files (relative to workspace)'
         required: true
         default: 'Mindustry/core/src/mindustry/'
+      output_folder:
+        description: 'Output root directory (will mirror input folder structure)'
+        required: true
+        default: 'output/'
+      branch:
+        description: 'Mindustry branch (optional)'
+        required: false
+        default: 'master'
 
 jobs:
   convert:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout self repo
         uses: actions/checkout@v4
-        
-      - name: 手动同步 mindustry 源代码
+
+      - name: Checkout Mindustry source
         uses: actions/checkout@v4
         with:
           repository: Anuken/Mindustry
-          ref: ${{ inputs.branch || 'master' }}
+          ref: ${{ github.event.inputs.branch }}
           path: Mindustry
 
       - name: Set up JDK 11
@@ -28,28 +36,30 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
 
-      - name: Build with Maven
-        run: mvn clean package
+      - name: Build converter
+        run: mvn -B clean package
 
       - name: Run Java converter
-        run: java -jar  target/java-to-excel-1.0-SNAPSHOT.jar 
-            --input-folder "${{ github.event.inputs.java_folder }}" 
-            --output-file java_fields_combined.xlsx
+        run: |
+          java -jar target/java-to-excel-1.0-SNAPSHOT.jar \
+            --input-folder  "${{ github.event.inputs.input_folder }}" \
+            --output-root   "${{ github.event.inputs.output_folder }}"
 
-      - name: Upload error logs (if any)
+      - name: Upload parsing logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-             name: parsing-logs
-             path: parsing_errors.log
+          name: parsing-logs
+          path: parsing_errors.log
 
-      - name: Create zip archive
+      - name: Zip entire output tree
         if: success()
-        run: zip -r java_fields_output.zip java_fields_combined.xlsx
+        run: |
+          zip -r java-fields-output.zip ${{ github.event.inputs.output_folder }}
 
-      - name: Upload zip archive
+      - name: Upload output tree
         if: success()
         uses: actions/upload-artifact@v4
         with:
-                  name: java-fields-archive
-                  path: java_fields_output.zip
+          name: java-fields-output
+          path: java-fields-output.zip
