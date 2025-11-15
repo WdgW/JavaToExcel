@@ -113,42 +113,36 @@ public class JavaToExcelConverter implements Callable<Integer> {
         try {
             // 1. 遍历输入目录，按层创建输出目录
             Files.walk(inRoot)
-                    .filter(Files::isDirectory)
-                    .forEach(dir -> {
-                        // 对应的输出目录
-                        Path relative = inRoot.relativize(dir);
-                        Path outDir = outRoot.resolve(relative);
-                        try {
-                            Files.createDirectories(outDir);
-                        } catch (IOException e) {
-                            logger.log(Level.SEVERE, "mkdir failed: " + outDir, e);
-                        }
+        .filter(Files::isDirectory)
+        .forEach(dir -> {
+            // 对应的输出目录
+            Path relative = inRoot.relativize(dir);
+            Path outDir = outRoot.resolve(relative);
+            try {
+                Files.createDirectories(outDir);
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, "mkdir failed: " + outDir, e);
+            }
 
-                        // 2. 如果当前目录已经是“最底层”（没有子目录），就生成 Excel
-                        boolean hasSubDir;
-                        try {
-                            hasSubDir = Files.list(dir).anyMatch(Files::isDirectory);
-                        } catch (IOException e) {
-                            logger.log(Level.SEVERE, "list failed: " + dir, e);
-                            return;
-                        }
-                        if (!hasSubDir) {
-                            List<Path> javaFiles;
-                            try {
-                                javaFiles = Files.list(dir)
-                                        .filter(p -> p.toString().endsWith(".java"))
-                                        .collect(Collectors.toList());
-                            } catch (IOException e) {
-                                logger.log(Level.SEVERE, "list java files failed: " + dir, e);
-                                return;
-                            }
-                            if (!javaFiles.isEmpty()) {
-                                String excelName = dir.getFileName() + ".xlsx";
-                                Path excelPath = outDir.resolve(excelName);
-                                buildExcel(javaFiles, excelPath);
-                            }
-                        }
-                    });
+            // 🔥 扫描当前目录下的 .java 文件（不递归）
+            List<Path> javaFiles;
+            try {
+                javaFiles = Files.list(dir)
+                        .filter(p -> p.toString().endsWith(".java"))
+                        .collect(Collectors.toList());
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, "list java files failed: " + dir, e);
+                return;
+            }
+
+            // 🔥 只要有 .java 文件，就生成一个 Excel
+            if (!javaFiles.isEmpty()) {
+                String excelName = dir.getFileName() + ".xlsx";
+                Path excelPath = outDir.resolve(excelName);
+                buildExcel(javaFiles, excelPath);
+            }
+        });
+
             logger.info("All done. Check output under: " + outRoot.toAbsolutePath());
             return 0;
         } catch (Exception e) {
