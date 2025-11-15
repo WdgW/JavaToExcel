@@ -186,3 +186,14 @@ logger.info("Processing completed: " + success.get() + " files succeeded, " + er
         }
     }
 }
+private static final class Counter {
+        int value;
+
+        void inc() {
+            value++;
+        }
+
+        int get() {
+            return value;
+        }
+}
