@@ -4,6 +4,7 @@ import javalang
 import pandas as pd
 import logging
 from javalang.parser import JavaSyntaxError
+from javalang.ast import Node
 
 # 配置日志
 logging.basicConfig(
@@ -15,42 +16,70 @@ logging.basicConfig(
     ]
 )
 
+def get_node_text(node, code):
+    """获取AST节点在原始代码中的文本"""
+    if not hasattr(node, 'position') or not node.position:
+        return str(node)
+    
+    start_pos = node.position
+    end_pos = node.position_end if hasattr(node, 'position_end') else None
+    
+    if not end_pos:
+        return str(node)
+    
+    # 提取代码片段（处理行号和列号）
+    lines = code.split('\n')
+    start_line = start_pos.line - 1
+    end_line = end_pos.line - 1
+    
+    if start_line == end_line:
+        return lines[start_line][start_pos.column-1:end_pos.column]
+    else:
+        # 多行表达式取前3行+省略号
+        result = []
+        for i in range(start_line, min(end_line+1, start_line+3)):
+            if i == start_line:
+                result.append(lines[i][start_pos.column-1:])
+            elif i == end_line:
+                result.append(lines[i][:end_pos.column])
+            else:
+                result.append(lines[i])
+        if end_line > start_line + 2:
+            result.append('...')
+        return '\n'.join(result)
+
 def preprocess_java_code(code):
     """预处理Java代码：移除注解和泛型语法"""
-    # 移除注解（@开头的行）
     code = re.sub(r'@\w+\s+', '', code)
     code = re.sub(r'@\w+\(.*?\)', '', code)
-    
-    # 移除泛型符号（保留尖括号内的内容但移除尖括号）
     code = re.sub(r'<.*?>', '', code)
-    
-    # 移除单行注释
     code = re.sub(r'//.*', '', code)
-    
-    # 移除多行注释
     code = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
-    
     return code
 
 def parse_java_file(file_path):
-    """解析预处理后的Java文件"""
+    """解析Java文件，优化默认值提取"""
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             original_code = f.read()
         
-        # 预处理代码
         processed_code = preprocess_java_code(original_code)
-        
-        # 解析处理后的代码
         tree = javalang.parse.parse(processed_code)
         fields = []
         
         for path, node in tree.filter(javalang.tree.FieldDeclaration):
             for declarator in node.declarators:
+                # 获取原始默认值文本
+                default_value = None
+                if declarator.initializer:
+                    default_value = get_node_text(declarator.initializer, original_code)
+                    # 清理空白字符
+                    default_value = re.sub(r'\s+', ' ', default_value).strip()
+                
                 field_info = {
                     '字段名': declarator.name,
                     '类型': node.type.name,
-                    '默认值': str(declarator.initializer) if declarator.initializer else None,
+                    '默认值': default_value,
                     '注释': node.documentation.strip() if node.documentation else None
                 }
                 fields.append(field_info)
@@ -75,7 +104,6 @@ def process_java_folder(folder_path, output_excel):
                     java_file_path = os.path.join(root, file)
                     sheet_name = os.path.splitext(file)[0]
                     
-                    # 限制工作表名长度
                     if len(sheet_name) > 31:
                         sheet_name = sheet_name[:28] + '...'
                     
@@ -93,7 +121,7 @@ def process_java_folder(folder_path, output_excel):
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description='Java字段提取（跳过注解和泛型）')
+    parser = argparse.ArgumentParser(description='Java字段提取（优化默认值处理）')
     parser.add_argument('--input_folder', required=True, help='Java文件所在文件夹')
     parser.add_argument('--output_file', required=True, help='输出的Excel文件名')
     args = parser.parse_args()
