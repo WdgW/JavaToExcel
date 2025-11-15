@@ -50,8 +50,8 @@ jobs:
       - name: Run Java converter
         run: |
           java -jar target/java-to-excel-1.0-SNAPSHOT.jar \
-            --input-folder  "${{ github.event.inputs.input_folder }}" \
-            --output-root   "${{ github.event.inputs.output_folder }}"
+            --input-folder  "$INPUT_FOLDER" \
+            --output-root   "$OUTPUT_FOLDER"
 
       - name: Upload parsing logs
         if: always()
