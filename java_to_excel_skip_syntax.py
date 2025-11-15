@@ -16,8 +16,19 @@ logging.basicConfig(
     ]
 )
 
+def get_literal_value(node):
+    """提取Literal节点的值"""
+    if isinstance(node, javalang.tree.Literal):
+        return node.value
+    return None
+
 def get_node_text(node, code):
     """获取AST节点在原始代码中的文本"""
+    # 优先处理Literal节点
+    literal_value = get_literal_value(node)
+    if literal_value is not None:
+        return literal_value
+    
     if not hasattr(node, 'position') or not node.position:
         return str(node)
     
@@ -27,15 +38,16 @@ def get_node_text(node, code):
     if not end_pos:
         return str(node)
     
-    # 提取代码片段（处理行号和列号）
     lines = code.split('\n')
     start_line = start_pos.line - 1
     end_line = end_pos.line - 1
     
+    if start_line >= len(lines) or end_line >= len(lines):
+        return str(node)
+    
     if start_line == end_line:
         return lines[start_line][start_pos.column-1:end_pos.column]
     else:
-        # 多行表达式取前3行+省略号
         result = []
         for i in range(start_line, min(end_line+1, start_line+3)):
             if i == start_line:
@@ -58,7 +70,7 @@ def preprocess_java_code(code):
     return code
 
 def parse_java_file(file_path):
-    """解析Java文件，优化默认值提取"""
+    """解析Java文件，修复Literal节点处理"""
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             original_code = f.read()
@@ -69,12 +81,9 @@ def parse_java_file(file_path):
         
         for path, node in tree.filter(javalang.tree.FieldDeclaration):
             for declarator in node.declarators:
-                # 获取原始默认值文本
                 default_value = None
                 if declarator.initializer:
                     default_value = get_node_text(declarator.initializer, original_code)
-                    # 清理空白字符
-                    default_value = re.sub(r'\s+', ' ', default_value).strip()
                 
                 field_info = {
                     '字段名': declarator.name,
@@ -121,7 +130,7 @@ def process_java_folder(folder_path, output_excel):
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description='Java字段提取（优化默认值处理）')
+    parser = argparse.ArgumentParser(description='Java字段提取（修复Literal节点处理）')
     parser.add_argument('--input_folder', required=True, help='Java文件所在文件夹')
     parser.add_argument('--output_file', required=True, help='输出的Excel文件名')
     args = parser.parse_args()
