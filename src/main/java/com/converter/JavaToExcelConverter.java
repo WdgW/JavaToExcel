@@ -193,39 +193,53 @@ public class JavaToExcelConverter implements Callable<Integer> {
     }
 
     private void createSheet(Workbook workbook, String fileName, List<FieldInfo> fields) {
-        String sheetName = fileName.replace(".java", "");
-        if (sheetName.length() > 31) {
-            sheetName = sheetName.substring(0, 28) + "...";
+    // 创建并命名工作表
+    String sheetName = fileName.replace(".java", "");
+    if (sheetName.length() > 31) {
+        sheetName = sheetName.substring(0, 28) + "...";
+    }
+    Sheet sheet = workbook.createSheet(sheetName);
+
+    // 表头数组
+    String[] headers = {"Field Name", "Type", "Default Value", "Comment"};
+
+    // 创建表头行
+    Row headerRow = sheet.createRow(0);
+    CellStyle headerStyle = workbook.createCellStyle();
+    Font font = workbook.createFont();
+    font.setBold(true);
+    headerStyle.setFont(font);
+    headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+    headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+    for (int i = 0; i < headers.length; i++) {
+        Cell cell = headerRow.createCell(i);
+        cell.setCellValue(headers[i]);
+        cell.setCellStyle(headerStyle); // 设置表头样式
+    }
+
+    // 填充数据
+    int rowNum = 1;
+    for (FieldInfo field : fields) {
+        Row row = sheet.createRow(rowNum++);
+        row.createCell(0).setCellValue(field.fieldName);
+        row.createCell(1).setCellValue(field.typeName);
+
+        if (field.defaultValue != null) {
+            row.createCell(2).setCellValue(field.defaultValue);
         }
 
-        Sheet sheet = workbook.createSheet(sheetName);
-        Row headerRow = sheet.createRow(0);
-
-        String[] headers = {"字段名", "类型", "默认值", "注释"};
-        for (int i = 0; i < headers.length; i++) {
-            Cell cell = headerRow.createCell(i);
-            cell.setCellValue(headers[i]);
-        }
-
-        int rowNum = 1;
-        for (FieldInfo field : fields) {
-            Row row = sheet.createRow(rowNum++);
-            row.createCell(0).setCellValue(field.fieldName);
-            row.createCell(1).setCellValue(field.typeName);
-
-            if (field.defaultValue != null) {
-                row.createCell(2).setCellValue(field.defaultValue);
-            }
-
-            if (field.comment != null) {
-                row.createCell(3).setCellValue(field.comment);
-            }
-        }
-
-        for (int i = 0; i < headers.length; i++) {
-            sheet.autoSizeColumn(i);
+        if (field.comment != null) {
+            row.createCell(3).setCellValue(field.comment);
         }
     }
+
+    // 自动调整列宽
+    for (int i = 0; i < headers.length; i++) {
+        sheet.autoSizeColumn(i);
+        // 可以在这里设置列的最小宽度和最大宽度
+    }
+}
 
     private static final class Counter {
         int value;
